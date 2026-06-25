@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Picket — automatic security for every repo</title>
+<meta name="description" content="A lightweight, token-frugal security bot that watches every one of your GitHub repos, fixes the safe things itself, and only ever asks you about the rest.">
+<style>
+:root{
+  --bg:#ffffff; --bg-2:#f5f5f7; --bg-3:#fbfbfd;
+  --ink:#1d1d1f; --ink-2:#6e6e73; --ink-3:#86868b;
+  --line:#d2d2d7; --line-2:#e8e8ed;
+  --blue:#0071e3; --blue-ink:#0066cc;
+  --green:#1d8a4e; --amber:#a85f00;
+  --radius:18px; --radius-sm:12px; --pill:980px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --maxw:1000px; --ease:cubic-bezier(0.28,0.11,0.32,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);
+  font-size:17px;line-height:1.47;letter-spacing:-.01em;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+
+/* ---- nav ---- */
+nav{position:sticky;top:0;z-index:50;height:48px;
+  background:rgba(255,255,255,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid var(--line-2)}
+nav .wrap{height:100%;display:flex;align-items:center;justify-content:space-between;max-width:1100px}
+nav .brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:18px;letter-spacing:-.02em;color:var(--ink)}
+nav .brand:hover{text-decoration:none}
+nav .brand svg{width:22px;height:22px}
+nav .links{display:flex;gap:28px;font-size:14px;color:var(--ink-2)}
+nav .links a{color:var(--ink-2)}
+nav .links a:hover{color:var(--ink);text-decoration:none}
+@media(max-width:600px){nav .links a:not(.primary){display:none}}
+
+/* ---- buttons ---- */
+.btn{display:inline-flex;align-items:center;gap:7px;font-size:17px;font-weight:400;line-height:1;
+  padding:12px 22px;border-radius:var(--pill);transition:all .25s var(--ease);cursor:pointer;border:0}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:#0077ed;text-decoration:none;transform:scale(1.012)}
+.btn-secondary{background:transparent;color:var(--blue);padding:12px 8px}
+.btn-secondary:hover{text-decoration:none;color:var(--blue-ink)}
+.btn-secondary .chev{transition:transform .25s var(--ease)}
+.btn-secondary:hover .chev{transform:translateY(2px)}
+.btn-ghost{background:rgba(0,0,0,.045);color:var(--ink);padding:11px 20px;font-size:15px}
+.btn-ghost:hover{background:rgba(0,0,0,.07);text-decoration:none}
+nav .btn-mini{background:var(--blue);color:#fff;font-size:14px;padding:6px 15px;border-radius:var(--pill)}
+nav .btn-mini:hover{text-decoration:none;background:#0077ed}
+
+/* ---- hero ---- */
+.hero{text-align:center;padding:88px 0 76px}
+.hero .mark{width:72px;height:72px;margin:0 auto 26px}
+.eyebrow{font-size:19px;font-weight:600;color:var(--blue);letter-spacing:0;margin-bottom:8px}
+h1{font-size:clamp(40px,7vw,76px);font-weight:600;line-height:1.05;letter-spacing:-.025em;color:var(--ink)}
+.hero .sub{font-size:clamp(19px,2.4vw,24px);font-weight:400;color:var(--ink-2);
+  max-width:30ch;margin:22px auto 0;line-height:1.4;letter-spacing:-.01em}
+.hero .cta{display:flex;gap:10px;justify-content:center;align-items:center;margin-top:34px;flex-wrap:wrap}
+.hero .note{margin-top:20px;font-size:13px;color:var(--ink-3)}
+.hero .note code{font-family:var(--mono);font-size:12px;background:var(--bg-2);padding:2px 7px;border-radius:6px;color:var(--ink-2)}
+
+/* ---- section rhythm ---- */
+section{padding:92px 0}
+.section-head{text-align:center;max-width:34ch;margin:0 auto 56px}
+.section-head h2{font-size:clamp(30px,4.4vw,46px);font-weight:600;letter-spacing:-.02em;line-height:1.08}
+.section-head p{font-size:clamp(17px,2vw,21px);color:var(--ink-2);margin-top:14px;line-height:1.45}
+.tint{background:var(--bg-2)}
+
+/* ---- how it works: flow ---- */
+.flow{max-width:900px;margin:0 auto}
+.flow svg{width:100%;height:auto;display:block}
+.flow .legend{display:flex;gap:26px;justify-content:center;flex-wrap:wrap;margin-top:30px;font-size:14px;color:var(--ink-2)}
+.flow .legend b{color:var(--ink);font-weight:600}
+.flow .legend .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;vertical-align:1px}
+
+/* ---- two layers ---- */
+.layers{display:grid;grid-template-columns:1fr 1fr;gap:22px;max-width:920px;margin:0 auto}
+@media(max-width:760px){.layers{grid-template-columns:1fr}}
+.layer{background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:34px 32px}
+.layer .tag{font-size:13px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+.layer h3{font-size:26px;font-weight:600;letter-spacing:-.02em;margin:8px 0 12px}
+.layer p{color:var(--ink-2);font-size:16px;line-height:1.55}
+.layer .live{display:inline-flex;align-items:center;gap:6px;margin-top:18px;font-size:13px;font-weight:500;color:var(--green)}
+.layer .live .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.layer .soon{margin-top:18px;font-size:13px;font-weight:500;color:var(--ink-3)}
+
+/* ---- features ---- */
+.feat{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line-2);
+  border:1px solid var(--line-2);border-radius:var(--radius);overflow:hidden;max-width:920px;margin:0 auto}
+@media(max-width:680px){.feat{grid-template-columns:1fr}}
+.feat .cell{background:var(--bg);padding:34px 32px}
+.feat .ic{width:30px;height:30px;color:var(--blue);margin-bottom:16px}
+.feat h4{font-size:20px;font-weight:600;letter-spacing:-.01em;margin-bottom:8px}
+.feat p{color:var(--ink-2);font-size:15.5px;line-height:1.55}
+
+/* ---- setup steps ---- */
+.steps{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.step{display:flex;gap:22px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);
+  border-radius:var(--radius);padding:26px 30px}
+.step .n{flex:none;width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600}
+.step h4{font-size:19px;font-weight:600;letter-spacing:-.01em;margin-bottom:5px}
+.step p{color:var(--ink-2);font-size:15.5px;line-height:1.55}
+.step code{font-family:var(--mono);font-size:13px;background:var(--bg-2);padding:2px 7px;border-radius:6px;color:var(--ink)}
+
+/* ---- final cta ---- */
+.final{text-align:center;padding:104px 0}
+.final h2{font-size:clamp(32px,5vw,52px);font-weight:600;letter-spacing:-.025em;line-height:1.06}
+.final p{font-size:clamp(18px,2.2vw,22px);color:var(--ink-2);margin:16px auto 0;max-width:34ch}
+.final .cta{display:flex;gap:10px;justify-content:center;margin-top:32px;flex-wrap:wrap}
+
+/* ---- footer ---- */
+footer{border-top:1px solid var(--line-2);padding:32px 0;font-size:12px;color:var(--ink-3)}
+footer .wrap{max-width:1100px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+footer a{color:var(--ink-3)}
+footer a:hover{color:var(--ink-2)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" fill="#0071e3" opacity=".12"/><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" stroke="#0071e3" stroke-width="1.5" stroke-linejoin="round"/><path d="m8.6 12 2.3 2.3L15.6 9.7" stroke="#0071e3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Picket
+    </a>
+    <div class="links">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#setup">Setup</a>
+      <a class="btn-mini" href="#get">Get Picket</a>
+    </div>
+  </div>
+</nav>
+
+<a id="top"></a>
+<header class="hero">
+  <div class="wrap">
+    <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" fill="#0071e3" opacity=".1"/><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" stroke="#0071e3" stroke-width="1.4" stroke-linejoin="round"/><path d="m8.4 12 2.5 2.5L15.8 9.4" stroke="#0071e3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="eyebrow">Picket</div>
+    <h1>Keep every repo<br>secure. Automatically.</h1>
+    <p class="sub">A lightweight bot that watches all your GitHub repositories, fixes the safe things itself, and only ever asks you about the rest.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="#get">Get Picket</a>
+      <a class="btn btn-secondary" href="#how">How it works <span class="chev">↓</span></a>
+    </div>
+    <p class="note">Free and open source · MIT · runs on your own GitHub, nothing leaves it</p>
+  </div>
+</header>
+
+<section id="how" class="tint">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>It only looks at what changed.</h2>
+      <p>Most of the time it does nothing, and costs nothing. When a repo actually changes, it checks just the new code, and acts only where it's safe.</p>
+    </div>
+    <div class="flow">
+      <svg viewBox="0 0 900 200" role="img" aria-label="Flow: changed repos, then new diff, then scan, then a tiered decision">
+        <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 8 5 1 9" fill="none" stroke="#86868b" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+        <g font-family="-apple-system,sans-serif" text-anchor="middle">
+          <rect x="8" y="64" width="150" height="72" rx="14" fill="#fff" stroke="#d2d2d7"/>
+          <text x="83" y="94" font-size="15" font-weight="600" fill="#1d1d1f">Changed repos</text>
+          <text x="83" y="114" font-size="12.5" fill="#86868b">cheap check · 0 tokens</text>
+          <line x1="166" y1="100" x2="214" y2="100" stroke="#86868b" stroke-width="1.4" marker-end="url(#ar)"/>
+          <rect x="222" y="64" width="150" height="72" rx="14" fill="#fff" stroke="#d2d2d7"/>
+          <text x="297" y="94" font-size="15" font-weight="600" fill="#1d1d1f">Just the new diff</text>
+          <text x="297" y="114" font-size="12.5" fill="#86868b">never the whole tree</text>
+          <line x1="380" y1="100" x2="428" y2="100" stroke="#86868b" stroke-width="1.4" marker-end="url(#ar)"/>
+          <rect x="436" y="64" width="150" height="72" rx="14" fill="#fff" stroke="#d2d2d7"/>
+          <text x="511" y="94" font-size="15" font-weight="600" fill="#1d1d1f">Scan + classify</text>
+          <text x="511" y="114" font-size="12.5" fill="#86868b">tier 1 · 2 · 3</text>
+          <line x1="594" y1="100" x2="642" y2="100" stroke="#86868b" stroke-width="1.4" marker-end="url(#ar)"/>
+          <rect x="650" y="20" width="242" height="50" rx="12" fill="#f0f9f3" stroke="#bfe6cd"/>
+          <text x="771" y="42" font-size="14" font-weight="600" fill="#1d8a4e">Safe fix → auto-merge</text>
+          <text x="771" y="59" font-size="11.5" fill="#3f9c66">patch / minor, on green CI</text>
+          <rect x="650" y="76" width="242" height="48" rx="12" fill="#fff7ec" stroke="#f0dcb8"/>
+          <text x="771" y="97" font-size="14" font-weight="600" fill="#a85f00">Needs a look → PR</text>
+          <text x="771" y="114" font-size="11.5" fill="#b9852f">code findings, your review</text>
+          <rect x="650" y="130" width="242" height="48" rx="12" fill="#fdf0f1" stroke="#f3cdd0"/>
+          <text x="771" y="151" font-size="14" font-weight="600" fill="#c0392f">Secret → alert only</text>
+          <text x="771" y="168" font-size="11.5" fill="#cc6157">never auto-touched</text>
+          <line x1="594" y1="100" x2="640" y2="45" stroke="#bfe6cd" stroke-width="1.4"/>
+          <line x1="594" y1="100" x2="640" y2="100" stroke="#f0dcb8" stroke-width="1.4"/>
+          <line x1="594" y1="100" x2="640" y2="154" stroke="#f3cdd0" stroke-width="1.4"/>
+        </g>
+      </svg>
+      <div class="legend">
+        <span><span class="sw" style="background:#1d8a4e"></span><b>Tier 1</b> safe, automatic</span>
+        <span><span class="sw" style="background:#a85f00"></span><b>Tier 2</b> a PR for you</span>
+        <span><span class="sw" style="background:#c0392f"></span><b>Tier 3</b> alert only</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Two layers. One quiet helper.</h2>
+      <p>GitHub's own engine handles the dependency bulk. A small, careful agent handles the rest.</p>
+    </div>
+    <div class="layers">
+      <div class="layer">
+        <div class="tag">Layer 1 · native</div>
+        <h3>Dependabot, everywhere</h3>
+        <p>Turns on GitHub's built-in vulnerability scanning and auto-fix pull requests across every one of your repos at once. Patch and minor bumps that pass CI merge themselves; bigger ones wait for you. Runs in GitHub's cloud, zero upkeep.</p>
+        <span class="live"><span class="dot"></span>Enabled in one command</span>
+      </div>
+      <div class="layer">
+        <div class="tag">Layer 2 · the agent</div>
+        <h3>The incremental watcher</h3>
+        <p>On a schedule, it checks only the repos that changed, reads only the new code, scans it, and tiers what it finds. Safe fixes go out as PRs that auto-merge on green; anything ambiguous waits for your review; secrets are never touched, only flagged.</p>
+        <span class="soon">Ships dry-run safe · you enable repos one at a time</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="tint">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Careful by design.</h2>
+      <p>Every default leans toward safe. The interesting decisions are always yours.</p>
+    </div>
+    <div class="feat">
+      <div class="cell">
+        <svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h4>Costs nothing at rest</h4>
+        <p>When no repo has changed, it spends zero AI tokens and makes no PRs. The watching is a cheap API check; the thinking only happens on real deltas.</p>
+      </div>
+      <div class="cell">
+        <svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <h4>Tiered, never reckless</h4>
+        <p>Only patch and minor dependency bumps that pass CI ever merge on their own. Code findings become a PR you review. Nothing surprising ships unattended.</p>
+      </div>
+      <div class="cell">
+        <svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M12 2.5 5 5v6c0 4.4 3 7.4 7 8.8 4-1.4 7-4.4 7-8.8V5l-7-2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 12h6M12 9v6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <h4>Secrets stay yours</h4>
+        <p>A leaked credential is never auto-fixed. The bot flags it and stops, because rotation is a decision only you should make. No exceptions.</p>
+      </div>
+      <div class="cell">
+        <svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="1.6"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <h4>Its own scoped identity</h4>
+        <p>Picket acts as a least-privilege GitHub App, not your personal token. You grant it exactly what it needs, see every action, and can revoke it in one click.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="setup">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Running in three steps.</h2>
+      <p>Layer 1 is live the moment you finish step one.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><div>
+        <h4>Use the template</h4>
+        <p>Click <b>Use this template</b> on the repo to get your own copy, then run the one-line command that switches GitHub's Dependabot on across all your repositories.</p>
+      </div></div>
+      <div class="step"><div class="n">2</div><div>
+        <h4>Create the app</h4>
+        <p>Follow the guided walkthrough to create a scoped <b>GitHub App</b> and drop its key in one folder. This is what lets the agent open careful pull requests under its own identity.</p>
+      </div></div>
+      <div class="step"><div class="n">3</div><div>
+        <h4>Watch a dry run, then go live</h4>
+        <p>See exactly what it would do, with zero writes. When you trust it, add one repo to the allowlist with a single line and let it work. Widen it whenever you like.</p>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<section id="get" class="final tint">
+  <div class="wrap">
+    <h2>Get Picket.</h2>
+    <p>Free, open source, and it never sends your code anywhere but your own GitHub.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/KiwiMaddog2020/picket/generate">Use this template</a>
+      <a class="btn btn-ghost" href="https://github.com/KiwiMaddog2020/picket/archive/refs/heads/main.zip">Download .zip</a>
+    </div>
+    <p class="note" style="margin-top:18px;color:var(--ink-3);font-size:13px">Requires a GitHub account and the <code style="font-family:var(--mono);font-size:12px;background:var(--bg);padding:2px 7px;border-radius:6px">gh</code> command-line tool.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Picket — open-source security automation for GitHub.</span>
+    <span>MIT licensed · built by Kevin Madson</span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,45 @@
+name: Picket scan
+
+# Runs a Picket pass on a schedule. DRY-RUN only — it never writes to a repo
+# from CI. To go live, run bin/run-once.sh with --live --execute on your own
+# machine after you have added repos to config/live_allowlist.txt.
+#
+# Requires two repository secrets:
+#   PICKET_APP_ID   — your GitHub App's numeric ID
+#   PICKET_APP_KEY  — the contents of your GitHub App's private-key .pem
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"  # every 6 hours
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run a dry-run Picket scan
+        env:
+          PICKET_OWNER: ${{ github.repository_owner }}
+          PICKET_APP_ID: ${{ secrets.PICKET_APP_ID }}
+          PICKET_APP_KEY: app.pem
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          printf '%s' "${{ secrets.PICKET_APP_KEY }}" > app.pem
+          python3 bin/gh_app_token.py --exec bash -c '
+            gh repo list "$PICKET_OWNER" --no-archived --limit 100 \
+              --json nameWithOwner -q ".[].nameWithOwner" > config/repos.txt
+            bin/run-once.sh'
+          rm -f app.pem
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: picket-report
+          path: state/
+          if-no-files-found: ignore

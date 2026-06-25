@@ -1,0 +1,50 @@
+name: Dependabot security auto-merge
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  statuses: read
+
+jobs:
+  dependabot-security:
+    name: Merge safe Dependabot security updates
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ github.token }}
+
+      - name: Label non-auto-mergeable Dependabot update
+        if: >-
+          steps.metadata.outputs.alert-state == 'fixed' &&
+          steps.metadata.outputs.update-type == 'version-update:semver-major'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh label create needs-review --repo "$REPO" --color B60205 --description "Requires human review" --force
+          gh pr edit "$PR_URL" --repo "$REPO" --add-label needs-review
+
+      - name: Merge patch/minor security update after required checks pass
+        if: >-
+          steps.metadata.outputs.alert-state == 'fixed' &&
+          (
+            steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+            steps.metadata.outputs.update-type == 'version-update:semver-minor'
+          )
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr checks "$PR_URL" --repo "$REPO" --required --watch --fail-fast
+          gh pr merge "$PR_URL" --repo "$REPO" --squash --delete-branch

@@ -1,0 +1,17 @@
+# secrets — never commit
+.env
+*.env
+!config.example.env
+*.pem
+app.pem
+
+# runtime state
+state/
+config/repos.txt
+state/deltas/
+
+# python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
