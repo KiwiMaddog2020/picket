@@ -44,15 +44,33 @@ def build_jwt(app_id: str, key_path: Path, *, now: int | None = None) -> str:
 
 
 def gh_api_json(args: list[str], *, token: str, gh_bin: str = "gh") -> Any:
-    env = os.environ.copy()
-    env["GH_TOKEN"] = token
+    # App-JWT calls require `Authorization: Bearer <jwt>`. `gh api` sends
+    # `Authorization: token <jwt>`, which GitHub rejects for App JWTs
+    # ("a JSON web token could not be decoded"), so these go through curl with
+    # an explicit Bearer header. (gh_bin is unused here but kept for call-site
+    # compatibility; the resulting installation token works with gh normally.)
+    path = args[0]
+    method = args[args.index("-X") + 1] if "-X" in args else "GET"
     completed = subprocess.run(
-        [gh_bin, "api", *args],
-        env=env,
+        [
+            "curl",
+            "-fsS",
+            "-X",
+            method,
+            "-H",
+            f"Authorization: Bearer {token}",
+            "-H",
+            "Accept: application/vnd.github+json",
+            "-H",
+            "X-GitHub-Api-Version: 2022-11-28",
+            f"https://api.github.com{path}",
+        ],
         check=True,
         capture_output=True,
         text=True,
     )
+    if not completed.stdout.strip():
+        return None
     return json.loads(completed.stdout)
 
 
