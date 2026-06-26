@@ -19,7 +19,7 @@
   --bg:#ffffff; --bg-2:#f5f5f7; --bg-3:#fbfbfd;
   --ink:#1d1d1f; --ink-2:#6e6e73; --ink-3:#86868b;
   --line:#d2d2d7; --line-2:#e8e8ed;
-  --blue:#2a95ea; --blue-ink:#1668b8; --blue-fill:#1878c6;
+  --blue:#1479c9; --blue-ink:var(--blue); --blue-fill:var(--blue); --blue-deep:#1064a6;
   --green:#157a43; --amber:#8f5200; --red:#c0392f;
   --radius:18px; --radius-sm:12px; --pill:980px;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;
@@ -27,7 +27,7 @@
   --maxw:1000px; --ease:cubic-bezier(0.28,0.11,0.32,1);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+html{scroll-behavior:smooth;scroll-padding-top:56px;-webkit-text-size-adjust:100%}
 body{font-family:var(--sans);background:var(--bg);color:var(--ink);
   font-size:17px;line-height:1.47;letter-spacing:-.01em;
   -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
@@ -53,17 +53,18 @@ nav .links a:hover{color:var(--ink);text-decoration:none}
 .btn{display:inline-flex;align-items:center;gap:7px;font-size:17px;font-weight:400;line-height:1;
   padding:12px 22px;border-radius:var(--pill);transition:all .25s var(--ease);cursor:pointer;border:0}
 .btn-primary{background:var(--blue-fill);color:#fff}
-.btn-primary:hover{background:#155a9e;text-decoration:none;transform:scale(1.012)}
+.btn-primary:hover{background:var(--blue-deep);text-decoration:none;transform:scale(1.012)}
 .btn-secondary{background:transparent;color:var(--blue-ink);padding:12px 8px}
-.btn-secondary:hover{text-decoration:none;color:#155a9e}
+.btn-secondary:hover{text-decoration:none;color:var(--blue-deep)}
 .btn-secondary .chev{transition:transform .25s var(--ease)}
 .btn-secondary:hover .chev{transform:translateY(2px)}
 .btn-ghost{background:rgba(0,0,0,.045);color:var(--ink);padding:12px 22px;font-size:17px}
 .btn-ghost:hover{background:rgba(0,0,0,.07);text-decoration:none}
 nav .links a.btn-mini{background:var(--blue-fill);color:#fff;font-size:14px;padding:6px 15px;border-radius:var(--pill)}
-nav .links a.btn-mini:hover{text-decoration:none;background:#155a9e}
+nav .links a.btn-mini:hover{text-decoration:none;background:var(--blue-deep)}
 .btn:focus-visible{outline:2px solid var(--blue-ink);outline-offset:3px;border-radius:var(--pill)}
 .btn-primary:focus-visible,nav .links a.btn-mini:focus-visible{outline-color:var(--blue-ink);box-shadow:0 0 0 2px #fff inset}
+.btn:active{transform:scale(.97)}
 
 /* ---- hero ---- */
 .hero{text-align:center;padding:88px 0 76px}
@@ -157,7 +158,7 @@ footer a:hover{color:var(--ink)}
 <nav>
   <div class="wrap">
     <a class="brand" href="#top">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" fill="#2a95ea" opacity=".12"/><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" stroke="#2a95ea" stroke-width="1.5" stroke-linejoin="round"/><path d="m8.6 12 2.3 2.3L15.6 9.7" stroke="#2a95ea" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" fill="#1479c9" opacity=".12"/><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" stroke="#1479c9" stroke-width="1.5" stroke-linejoin="round"/><path d="m8.6 12 2.3 2.3L15.6 9.7" stroke="#1479c9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Picket
     </a>
     <div class="links">
@@ -173,7 +174,7 @@ footer a:hover{color:var(--ink)}
 <a id="top"></a>
 <header class="hero">
   <div class="wrap">
-    <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" fill="#2a95ea" opacity=".1"/><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" stroke="#2a95ea" stroke-width="1.4" stroke-linejoin="round"/><path d="m8.4 12 2.5 2.5L15.8 9.4" stroke="#2a95ea" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" fill="#1479c9" opacity=".1"/><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" stroke="#1479c9" stroke-width="1.4" stroke-linejoin="round"/><path d="m8.4 12 2.5 2.5L15.8 9.4" stroke="#1479c9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <div class="eyebrow">Open-source security bot for GitHub</div>
     <h1>Keep every repo<br>secure. Automatically.</h1>
     <p class="sub">A lightweight bot that watches all your GitHub repositories, fixes the safe things itself, and only ever asks you about the rest.</p>
