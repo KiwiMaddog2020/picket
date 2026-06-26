@@ -154,3 +154,101 @@ def test_tier_1_without_auto_merge_candidate_creates_pr_but_does_not_merge() -> 
     assert result["actions"][0]["action"] == "created_pr"
     assert "auto_merge" not in result["actions"][0]
     assert not any(command[:3] == ["gh", "pr", "merge"] for command in runner.commands)
+
+
+def tier_2_review() -> dict[str, object]:
+    return {
+        "repo": "octocat/example",
+        "head_sha": "abcdef123456",
+        "repo_dir": "/tmp/example",
+        "findings": [
+            {
+                "tier": "tier-2",
+                "title": "major django bump",
+                "file": "requirements.txt",
+                "fix_patch": "diff --git a/requirements.txt b/requirements.txt\n",
+            }
+        ],
+    }
+
+
+def _telegram_calls(runner: RecordingRunner) -> list[list[str]]:
+    return [
+        command
+        for command in runner.commands
+        if command and command[0] == "curl" and any("api.telegram.org" in part for part in command)
+    ]
+
+
+def test_telegram_notify_sends_on_live_run_when_configured() -> None:
+    runner = RecordingRunner()
+    escalator = Escalator(dry_run=False, telegram_token="TT", telegram_chat_id="42", runner=runner)
+
+    result = escalator.notify("review needed in repo X")
+
+    assert result == {"notified": True}
+    assert escalator.notifications == ["review needed in repo X"]
+    sent = _telegram_calls(runner)
+    assert sent and any("api.telegram.org/botTT/sendMessage" in part for part in sent[0])
+    assert "chat_id=42" in sent[0]
+    assert "text=review needed in repo X" in sent[0]
+
+
+def test_telegram_notify_is_silent_in_dry_run() -> None:
+    runner = RecordingRunner()
+    escalator = Escalator(dry_run=True, telegram_token="TT", telegram_chat_id="42", runner=runner)
+
+    result = escalator.notify("review needed")
+
+    assert result == {"notified": False, "reason": "dry_run"}
+    assert escalator.notifications == ["review needed"]
+    assert _telegram_calls(runner) == []
+
+
+def test_telegram_notify_skipped_when_unconfigured() -> None:
+    runner = RecordingRunner()
+    escalator = Escalator(dry_run=False, runner=runner)
+
+    result = escalator.notify("review needed")
+
+    assert result == {"notified": False, "reason": "telegram_not_configured"}
+    assert _telegram_calls(runner) == []
+
+
+def test_tier_3_escalation_notifies_telegram() -> None:
+    runner = RecordingRunner()
+    escalator = Escalator(dry_run=False, telegram_token="TT", telegram_chat_id="42", runner=runner)
+    review = {
+        "repo": "octocat/example",
+        "head_sha": "abcdef123456",
+        "findings": [{"tier": "tier-3", "title": "Secret scanning alert", "secret": True}],
+    }
+
+    apply_review(
+        review,
+        allowlist={"octocat/example"},
+        live=True,
+        dry_run=False,
+        runner=runner,
+        escalator=escalator,
+    )
+
+    assert escalator.notifications
+    assert _telegram_calls(runner)
+
+
+def test_tier_2_pr_notifies_telegram() -> None:
+    runner = RecordingRunner()
+    escalator = Escalator(dry_run=False, telegram_token="TT", telegram_chat_id="42", runner=runner)
+
+    apply_review(
+        tier_2_review(),
+        allowlist={"octocat/example"},
+        live=True,
+        dry_run=False,
+        runner=runner,
+        escalator=escalator,
+    )
+
+    assert any("review needed in octocat/example" in note for note in escalator.notifications)
+    assert _telegram_calls(runner)

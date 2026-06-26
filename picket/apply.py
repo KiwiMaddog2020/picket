@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -52,13 +53,43 @@ class Escalator:
     dry_run: bool = True
     ntfy_topic: str | None = None
     escalate_cmd: str | None = None
+    telegram_token: str | None = None
+    telegram_chat_id: str | None = None
     runner: Runner = field(default_factory=SubprocessRunner)
     events: list[dict[str, Any]] = field(default_factory=list)
+    notifications: list[str] = field(default_factory=list)
+
+    def notify(self, text: str) -> dict[str, Any]:
+        """Send a 'needs your review' heads-up to Telegram, if configured.
+
+        Records every message (so dry-runs show what *would* be sent) but only
+        actually calls Telegram on a live run with a token + chat id present.
+        """
+        self.notifications.append(text)
+        if self.dry_run:
+            return {"notified": False, "reason": "dry_run"}
+        if not (self.telegram_token and self.telegram_chat_id):
+            return {"notified": False, "reason": "telegram_not_configured"}
+        self.runner.run(
+            [
+                "curl",
+                "-fsS",
+                "-X",
+                "POST",
+                f"https://api.telegram.org/bot{self.telegram_token}/sendMessage",
+                "--data-urlencode",
+                f"chat_id={self.telegram_chat_id}",
+                "--data-urlencode",
+                f"text={text}",
+            ]
+        )
+        return {"notified": True}
 
     def escalate(self, repo: str, finding: dict[str, Any]) -> dict[str, Any]:
-        message = f"Picket tier-3 finding in {repo}: {finding.get('title', 'untitled')}"
+        message = f"Picket: review needed (tier-3) in {repo} — {finding.get('title', 'untitled')}"
         event = {"repo": repo, "message": message, "finding": finding}
         self.events.append(event)
+        self.notify(message)
         if self.dry_run:
             return {"action": "would_escalate", "message": message}
 
@@ -218,16 +249,20 @@ def apply_review(
         if not enabled:
             action = "would_create_pr" if dry_run else "blocked_by_live_allowlist"
             results.append({"action": action, "repo": repo, "tier": tier.value})
-            continue
-
-        results.append(
-            create_pr_for_finding(
-                review=review,
-                finding=finding,
-                tier=tier,
-                runner=runner,
+        else:
+            results.append(
+                create_pr_for_finding(
+                    review=review,
+                    finding=finding,
+                    tier=tier,
+                    runner=runner,
+                )
             )
-        )
+
+        if tier is Tier.TIER_2:
+            escalator.notify(
+                f"Picket: review needed in {repo} — {finding.get('title', 'a security finding')}"
+            )
 
     return {
         "repo": repo,
@@ -285,6 +320,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--write-checkpoint", action="store_true")
     parser.add_argument("--ntfy-topic")
     parser.add_argument("--escalate-cmd")
+    parser.add_argument("--telegram-token", default=os.environ.get("PICKET_TELEGRAM_BOT_TOKEN"))
+    parser.add_argument("--telegram-chat-id", default=os.environ.get("PICKET_TELEGRAM_CHAT_ID"))
     return parser
 
 
@@ -298,6 +335,8 @@ def main(argv: list[str] | None = None) -> int:
         dry_run=args.dry_run,
         ntfy_topic=args.ntfy_topic,
         escalate_cmd=args.escalate_cmd,
+        telegram_token=args.telegram_token,
+        telegram_chat_id=args.telegram_chat_id,
         runner=runner,
     )
     result = apply_reviews(
