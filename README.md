@@ -67,6 +67,20 @@ To run it on a schedule, enable the included **[GitHub Action](.github/workflows
 - **Nothing leaves your GitHub** — Picket runs against the GitHub API and your
   own machine or Actions runner. There is no Picket server.
 
+## Optional extras
+
+Two opt-in add-ons, both off until you set them in `~/.config/picket/.env`:
+
+- **Telegram heads-up.** A phone ping the moment something needs your review (a
+  tier-2 PR, or a tier-3 escalation). Create a bot with @BotFather, then set
+  `PICKET_TELEGRAM_BOT_TOKEN` and `PICKET_TELEGRAM_CHAT_ID`.
+- **Trusted-author auto-merge.** `python3 -m picket.automerge` watches your open
+  PRs and enables auto-merge only for authors you trust (set
+  `PICKET_TRUSTED_PR_AUTHORS`; `dependabot[bot]` by default), and only when the PR
+  is green, conflict-free, not a fork, and touches no secret/auth/payment path.
+  Dry-run by default, gated by the same `config/live_allowlist.txt` as everything
+  else.
+
 ## Requirements
 
 A GitHub account, the [`gh`](https://cli.github.com) CLI, and Python 3.11+.
