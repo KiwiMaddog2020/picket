@@ -19,8 +19,8 @@
   --bg:#ffffff; --bg-2:#f5f5f7; --bg-3:#fbfbfd;
   --ink:#1d1d1f; --ink-2:#6e6e73; --ink-3:#86868b;
   --line:#d2d2d7; --line-2:#e8e8ed;
-  --blue:#0071e3; --blue-ink:#0066cc;
-  --green:#1d8a4e; --amber:#a85f00;
+  --blue:#2a95ea; --blue-ink:#1668b8; --blue-fill:#1878c6;
+  --green:#157a43; --amber:#8f5200; --red:#c0392f;
   --radius:18px; --radius-sm:12px; --pill:980px;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;
   --mono:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
@@ -31,15 +31,16 @@ html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{font-family:var(--sans);background:var(--bg);color:var(--ink);
   font-size:17px;line-height:1.47;letter-spacing:-.01em;
   -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-a{color:var(--blue);text-decoration:none}
+a{color:var(--blue-ink);text-decoration:none}
 a:hover{text-decoration:underline}
+a:focus-visible{outline:2px solid var(--blue-ink);outline-offset:3px;border-radius:4px}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
 
 /* ---- nav ---- */
 nav{position:sticky;top:0;z-index:50;height:48px;
   background:rgba(255,255,255,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
   border-bottom:1px solid var(--line-2)}
-nav .wrap{height:100%;display:flex;align-items:center;justify-content:space-between;max-width:1100px}
+nav .wrap{height:100%;display:flex;align-items:center;justify-content:space-between}
 nav .brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:18px;letter-spacing:-.02em;color:var(--ink)}
 nav .brand:hover{text-decoration:none}
 nav .brand svg{width:22px;height:22px}
@@ -51,26 +52,28 @@ nav .links a:hover{color:var(--ink);text-decoration:none}
 /* ---- buttons ---- */
 .btn{display:inline-flex;align-items:center;gap:7px;font-size:17px;font-weight:400;line-height:1;
   padding:12px 22px;border-radius:var(--pill);transition:all .25s var(--ease);cursor:pointer;border:0}
-.btn-primary{background:var(--blue);color:#fff}
-.btn-primary:hover{background:#0077ed;text-decoration:none;transform:scale(1.012)}
-.btn-secondary{background:transparent;color:var(--blue);padding:12px 8px}
-.btn-secondary:hover{text-decoration:none;color:var(--blue-ink)}
+.btn-primary{background:var(--blue-fill);color:#fff}
+.btn-primary:hover{background:#155a9e;text-decoration:none;transform:scale(1.012)}
+.btn-secondary{background:transparent;color:var(--blue-ink);padding:12px 8px}
+.btn-secondary:hover{text-decoration:none;color:#155a9e}
 .btn-secondary .chev{transition:transform .25s var(--ease)}
 .btn-secondary:hover .chev{transform:translateY(2px)}
-.btn-ghost{background:rgba(0,0,0,.045);color:var(--ink);padding:11px 20px;font-size:15px}
+.btn-ghost{background:rgba(0,0,0,.045);color:var(--ink);padding:12px 22px;font-size:17px}
 .btn-ghost:hover{background:rgba(0,0,0,.07);text-decoration:none}
-nav .btn-mini{background:var(--blue);color:#fff;font-size:14px;padding:6px 15px;border-radius:var(--pill)}
-nav .btn-mini:hover{text-decoration:none;background:#0077ed}
+nav .links a.btn-mini{background:var(--blue-fill);color:#fff;font-size:14px;padding:6px 15px;border-radius:var(--pill)}
+nav .links a.btn-mini:hover{text-decoration:none;background:#155a9e}
+.btn:focus-visible{outline:2px solid var(--blue-ink);outline-offset:3px;border-radius:var(--pill)}
+.btn-primary:focus-visible,nav .links a.btn-mini:focus-visible{outline-color:var(--blue-ink);box-shadow:0 0 0 2px #fff inset}
 
 /* ---- hero ---- */
 .hero{text-align:center;padding:88px 0 76px}
 .hero .mark{width:72px;height:72px;margin:0 auto 26px}
-.eyebrow{font-size:19px;font-weight:600;color:var(--blue);letter-spacing:0;margin-bottom:8px}
+.eyebrow{font-size:19px;font-weight:600;color:var(--blue-ink);letter-spacing:0;margin-bottom:8px}
 h1{font-size:clamp(40px,7vw,76px);font-weight:600;line-height:1.05;letter-spacing:-.025em;color:var(--ink)}
 .hero .sub{font-size:clamp(19px,2.4vw,24px);font-weight:400;color:var(--ink-2);
   max-width:30ch;margin:22px auto 0;line-height:1.4;letter-spacing:-.01em}
 .hero .cta{display:flex;gap:10px;justify-content:center;align-items:center;margin-top:34px;flex-wrap:wrap}
-.hero .note{margin-top:20px;font-size:13px;color:var(--ink-3)}
+.hero .note{margin-top:20px;font-size:13px;color:var(--ink-2)}
 .hero .note code{font-family:var(--mono);font-size:12px;background:var(--bg-2);padding:2px 7px;border-radius:6px;color:var(--ink-2)}
 
 /* ---- section rhythm ---- */
@@ -83,27 +86,45 @@ section{padding:92px 0}
 /* ---- how it works: flow ---- */
 .flow{max-width:900px;margin:0 auto}
 .flow svg{width:100%;height:auto;display:block}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .flow .legend{display:flex;gap:26px;justify-content:center;flex-wrap:wrap;margin-top:30px;font-size:14px;color:var(--ink-2)}
 .flow .legend b{color:var(--ink);font-weight:600}
 .flow .legend .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;vertical-align:1px}
+.flow-stack{display:none}
+.flow-stack .fstep{display:flex;align-items:center;gap:16px;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-sm);padding:16px 18px}
+.flow-stack .fstep+.fstep{margin-top:10px}
+.flow-stack .fn{flex:none;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600}
+.flow-stack .fstep b{display:block;font-size:15px;font-weight:600;color:var(--ink)}
+.flow-stack .fstep span{display:block;font-size:13px;color:var(--ink-2);margin-top:2px}
+.flow-stack .ftiers{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.flow-stack .ftier{border:1px solid var(--line);border-left-width:4px;border-radius:var(--radius-sm);padding:14px 16px}
+.flow-stack .ftier b{display:block;font-size:14px;font-weight:600}
+.flow-stack .ftier span{display:block;font-size:12.5px;color:var(--ink-2);margin-top:2px}
+.flow-stack .ft-g{background:#f0f9f3;border-color:#bfe6cd;border-left-color:var(--green)}
+.flow-stack .ft-g b{color:var(--green)}
+.flow-stack .ft-a{background:#fff7ec;border-color:#f0dcb8;border-left-color:var(--amber)}
+.flow-stack .ft-a b{color:var(--amber)}
+.flow-stack .ft-r{background:#fdf0f1;border-color:#f3cdd0;border-left-color:var(--red)}
+.flow-stack .ft-r b{color:var(--red)}
+@media(max-width:720px){.flow .flow-wide{display:none}.flow-stack{display:block}}
 
 /* ---- two layers ---- */
 .layers{display:grid;grid-template-columns:1fr 1fr;gap:22px;max-width:920px;margin:0 auto}
 @media(max-width:760px){.layers{grid-template-columns:1fr}}
 .layer{background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:34px 32px}
-.layer .tag{font-size:13px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+.layer .tag{font-size:13px;font-weight:600;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em}
 .layer h3{font-size:26px;font-weight:600;letter-spacing:-.02em;margin:8px 0 12px}
 .layer p{color:var(--ink-2);font-size:16px;line-height:1.55}
 .layer .live{display:inline-flex;align-items:center;gap:6px;margin-top:18px;font-size:13px;font-weight:500;color:var(--green)}
 .layer .live .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
-.layer .soon{margin-top:18px;font-size:13px;font-weight:500;color:var(--ink-3)}
+.layer .soon{margin-top:18px;font-size:13px;font-weight:500;color:var(--ink-2)}
 
 /* ---- features ---- */
 .feat{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line-2);
   border:1px solid var(--line-2);border-radius:var(--radius);overflow:hidden;max-width:920px;margin:0 auto}
 @media(max-width:680px){.feat{grid-template-columns:1fr}}
 .feat .cell{background:var(--bg);padding:34px 32px}
-.feat .ic{width:30px;height:30px;color:var(--blue);margin-bottom:16px}
+.feat .ic{width:30px;height:30px;color:var(--blue-fill);margin-bottom:16px}
 .feat h4{font-size:20px;font-weight:600;letter-spacing:-.01em;margin-bottom:8px}
 .feat p{color:var(--ink-2);font-size:15.5px;line-height:1.55}
 
@@ -124,10 +145,10 @@ section{padding:92px 0}
 .final .cta{display:flex;gap:10px;justify-content:center;margin-top:32px;flex-wrap:wrap}
 
 /* ---- footer ---- */
-footer{border-top:1px solid var(--line-2);padding:32px 0;font-size:12px;color:var(--ink-3)}
-footer .wrap{max-width:1100px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
-footer a{color:var(--ink-3)}
-footer a:hover{color:var(--ink-2)}
+footer{border-top:1px solid var(--line-2);padding:32px 0;font-size:12px;color:var(--ink-2)}
+footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+footer a{color:var(--ink-2)}
+footer a:hover{color:var(--ink)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}html{scroll-behavior:auto}}
 </style>
 </head>
@@ -136,13 +157,14 @@ footer a:hover{color:var(--ink-2)}
 <nav>
   <div class="wrap">
     <a class="brand" href="#top">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" fill="#0071e3" opacity=".12"/><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" stroke="#0071e3" stroke-width="1.5" stroke-linejoin="round"/><path d="m8.6 12 2.3 2.3L15.6 9.7" stroke="#0071e3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" fill="#2a95ea" opacity=".12"/><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" stroke="#2a95ea" stroke-width="1.5" stroke-linejoin="round"/><path d="m8.6 12 2.3 2.3L15.6 9.7" stroke="#2a95ea" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Picket
     </a>
     <div class="links">
       <a href="#how">How it works</a>
       <a href="#features">Features</a>
       <a href="#setup">Setup</a>
+      <a href="https://github.com/KiwiMaddog2020/picket">GitHub</a>
       <a class="btn-mini" href="#get">Get Picket</a>
     </div>
   </div>
@@ -151,15 +173,15 @@ footer a:hover{color:var(--ink-2)}
 <a id="top"></a>
 <header class="hero">
   <div class="wrap">
-    <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" fill="#0071e3" opacity=".1"/><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" stroke="#0071e3" stroke-width="1.4" stroke-linejoin="round"/><path d="m8.4 12 2.5 2.5L15.8 9.4" stroke="#0071e3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <div class="eyebrow">Picket</div>
+    <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" fill="#2a95ea" opacity=".1"/><path d="M12 2.5 4 5.5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10v-6L12 2.5Z" stroke="#2a95ea" stroke-width="1.4" stroke-linejoin="round"/><path d="m8.4 12 2.5 2.5L15.8 9.4" stroke="#2a95ea" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="eyebrow">Open-source security bot for GitHub</div>
     <h1>Keep every repo<br>secure. Automatically.</h1>
     <p class="sub">A lightweight bot that watches all your GitHub repositories, fixes the safe things itself, and only ever asks you about the rest.</p>
     <div class="cta">
       <a class="btn btn-primary" href="#get">Get Picket</a>
       <a class="btn btn-secondary" href="#how">How it works <span class="chev">↓</span></a>
     </div>
-    <p class="note">Free and open source · MIT · runs on your own GitHub, nothing leaves it</p>
+    <p class="note">Free and open source · MIT · your full codebase never leaves your repos</p>
   </div>
 </header>
 
@@ -170,39 +192,61 @@ footer a:hover{color:var(--ink-2)}
       <p>Most of the time it does nothing, and costs nothing. When a repo actually changes, it checks just the new code, and acts only where it's safe.</p>
     </div>
     <div class="flow">
-      <svg viewBox="0 0 900 200" role="img" aria-label="Flow: changed repos, then new diff, then scan, then a tiered decision">
-        <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 8 5 1 9" fill="none" stroke="#86868b" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <svg viewBox="0 0 900 200" role="img" aria-label="How Picket triages changes" aria-describedby="flow-desc" class="flow-wide">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 8 5 1 9" fill="none" stroke="#6e6e73" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></marker>
+          <marker id="ar-g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 8 5 1 9" fill="none" stroke="#157a43" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></marker>
+          <marker id="ar-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 8 5 1 9" fill="none" stroke="#8f5200" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></marker>
+          <marker id="ar-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 8 5 1 9" fill="none" stroke="#c0392f" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></marker>
+        </defs>
         <g font-family="-apple-system,sans-serif" text-anchor="middle">
-          <rect x="8" y="64" width="150" height="72" rx="14" fill="#fff" stroke="#d2d2d7"/>
+          <rect x="8" y="64" width="150" height="72" rx="14" fill="#fff" stroke="#b0b0b8"/>
           <text x="83" y="94" font-size="15" font-weight="600" fill="#1d1d1f">Changed repos</text>
-          <text x="83" y="114" font-size="12.5" fill="#86868b">cheap check · 0 tokens</text>
-          <line x1="166" y1="100" x2="214" y2="100" stroke="#86868b" stroke-width="1.4" marker-end="url(#ar)"/>
-          <rect x="222" y="64" width="150" height="72" rx="14" fill="#fff" stroke="#d2d2d7"/>
+          <text x="83" y="114" font-size="12.5" fill="#6e6e73">cheap check · 0 tokens</text>
+          <line x1="166" y1="100" x2="214" y2="100" stroke="#6e6e73" stroke-width="1.4" marker-end="url(#ar)"/>
+          <rect x="222" y="64" width="150" height="72" rx="14" fill="#fff" stroke="#b0b0b8"/>
           <text x="297" y="94" font-size="15" font-weight="600" fill="#1d1d1f">Just the new diff</text>
-          <text x="297" y="114" font-size="12.5" fill="#86868b">never the whole tree</text>
-          <line x1="380" y1="100" x2="428" y2="100" stroke="#86868b" stroke-width="1.4" marker-end="url(#ar)"/>
-          <rect x="436" y="64" width="150" height="72" rx="14" fill="#fff" stroke="#d2d2d7"/>
+          <text x="297" y="114" font-size="12.5" fill="#6e6e73">never the whole tree</text>
+          <line x1="380" y1="100" x2="428" y2="100" stroke="#6e6e73" stroke-width="1.4" marker-end="url(#ar)"/>
+          <rect x="436" y="64" width="150" height="72" rx="14" fill="#fff" stroke="#b0b0b8"/>
           <text x="511" y="94" font-size="15" font-weight="600" fill="#1d1d1f">Scan + classify</text>
-          <text x="511" y="114" font-size="12.5" fill="#86868b">tier 1 · 2 · 3</text>
-          <line x1="594" y1="100" x2="642" y2="100" stroke="#86868b" stroke-width="1.4" marker-end="url(#ar)"/>
+          <text x="511" y="114" font-size="12.5" fill="#6e6e73">tier 1 · 2 · 3</text>
           <rect x="650" y="20" width="242" height="50" rx="12" fill="#f0f9f3" stroke="#bfe6cd"/>
-          <text x="771" y="42" font-size="14" font-weight="600" fill="#1d8a4e">Safe fix → auto-merge</text>
-          <text x="771" y="59" font-size="11.5" fill="#3f9c66">patch / minor, on green CI</text>
+          <text x="771" y="42" font-size="14" font-weight="600" fill="#157a43">Safe fix → auto-merge</text>
+          <text x="771" y="59" font-size="11.5" fill="#157a43">patch / minor, on green CI</text>
           <rect x="650" y="76" width="242" height="48" rx="12" fill="#fff7ec" stroke="#f0dcb8"/>
-          <text x="771" y="97" font-size="14" font-weight="600" fill="#a85f00">Needs a look → PR</text>
-          <text x="771" y="114" font-size="11.5" fill="#b9852f">code findings, your review</text>
+          <text x="771" y="97" font-size="14" font-weight="600" fill="#8f5200">Needs a look → PR</text>
+          <text x="771" y="114" font-size="11.5" fill="#8f5200">code findings, your review</text>
           <rect x="650" y="130" width="242" height="48" rx="12" fill="#fdf0f1" stroke="#f3cdd0"/>
           <text x="771" y="151" font-size="14" font-weight="600" fill="#c0392f">Secret → alert only</text>
-          <text x="771" y="168" font-size="11.5" fill="#cc6157">never auto-touched</text>
-          <line x1="594" y1="100" x2="640" y2="45" stroke="#bfe6cd" stroke-width="1.4"/>
-          <line x1="594" y1="100" x2="640" y2="100" stroke="#f0dcb8" stroke-width="1.4"/>
-          <line x1="594" y1="100" x2="640" y2="154" stroke="#f3cdd0" stroke-width="1.4"/>
+          <text x="771" y="168" font-size="11.5" fill="#c0392f">never auto-touched</text>
+          <line x1="594" y1="100" x2="646" y2="45" stroke="#157a43" stroke-width="1.4" marker-end="url(#ar-g)"/>
+          <line x1="594" y1="100" x2="646" y2="100" stroke="#8f5200" stroke-width="1.4" marker-end="url(#ar-a)"/>
+          <line x1="594" y1="100" x2="646" y2="154" stroke="#c0392f" stroke-width="1.4" marker-end="url(#ar-r)"/>
         </g>
       </svg>
+      <ol id="flow-desc" class="visually-hidden">
+        <li>Changed repos: a cheap API check spots which repos changed, spending zero tokens.</li>
+        <li>Just the new diff: it reads only the new code, never the whole tree.</li>
+        <li>Scan and classify: it scans the diff and sorts findings into tiers 1, 2, and 3.</li>
+        <li>Tier 1, safe fix: patch and minor bumps that pass CI auto-merge.</li>
+        <li>Tier 2, needs a look: code findings open a pull request for your review.</li>
+        <li>Tier 3, secret: a leaked credential is alert-only and never auto-touched.</li>
+      </ol>
+      <div class="flow-stack" aria-hidden="true">
+        <div class="fstep"><span class="fn">1</span><div><b>Changed repos</b><span>cheap check · 0 tokens</span></div></div>
+        <div class="fstep"><span class="fn">2</span><div><b>Just the new diff</b><span>never the whole tree</span></div></div>
+        <div class="fstep"><span class="fn">3</span><div><b>Scan + classify</b><span>tier 1 · 2 · 3</span></div></div>
+        <div class="ftiers">
+          <div class="ftier ft-g"><b>Safe fix → auto-merge</b><span>patch / minor, on green CI</span></div>
+          <div class="ftier ft-a"><b>Needs a look → PR</b><span>code findings, your review</span></div>
+          <div class="ftier ft-r"><b>Secret → alert only</b><span>never auto-touched</span></div>
+        </div>
+      </div>
       <div class="legend">
-        <span><span class="sw" style="background:#1d8a4e"></span><b>Tier 1</b> safe, automatic</span>
-        <span><span class="sw" style="background:#a85f00"></span><b>Tier 2</b> a PR for you</span>
-        <span><span class="sw" style="background:#c0392f"></span><b>Tier 3</b> alert only</span>
+        <span><span class="sw" style="background:var(--green)"></span><b>Tier 1</b> safe, automatic</span>
+        <span><span class="sw" style="background:var(--amber)"></span><b>Tier 2</b> a PR for you</span>
+        <span><span class="sw" style="background:var(--red)"></span><b>Tier 3</b> alert only</span>
       </div>
     </div>
   </div>
@@ -241,7 +285,7 @@ footer a:hover{color:var(--ink-2)}
       <div class="cell">
         <svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <h4>Costs nothing at rest</h4>
-        <p>When no repo has changed, it spends zero AI tokens and makes no PRs. The watching is a cheap API check; the thinking only happens on real deltas.</p>
+        <p>When no repo has changed, it does nothing and makes no PRs. The watching is a cheap API check; the scan only runs on real deltas.</p>
       </div>
       <div class="cell">
         <svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -288,19 +332,19 @@ footer a:hover{color:var(--ink-2)}
 <section id="get" class="final tint">
   <div class="wrap">
     <h2>Get Picket.</h2>
-    <p>Free, open source, and it never sends your code anywhere but your own GitHub.</p>
+    <p>Free and open source (MIT). Picket runs as a least-privilege GitHub App, using GitHub's own API plus a local scan. No LLM, no third-party service: nothing about your code ever leaves GitHub.</p>
     <div class="cta">
       <a class="btn btn-primary" href="https://github.com/KiwiMaddog2020/picket/generate">Use this template</a>
       <a class="btn btn-ghost" href="https://github.com/KiwiMaddog2020/picket/archive/refs/heads/main.zip">Download .zip</a>
     </div>
-    <p class="note" style="margin-top:18px;color:var(--ink-3);font-size:13px">Requires a GitHub account and the <code style="font-family:var(--mono);font-size:12px;background:var(--bg);padding:2px 7px;border-radius:6px">gh</code> command-line tool.</p>
+    <p class="note" style="margin-top:18px;font-size:13px">Requires a GitHub account and the <code style="font-family:var(--mono);font-size:12px;background:var(--bg);padding:2px 7px;border-radius:6px;color:var(--ink-2)">gh</code> command-line tool.</p>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
     <span>Picket — open-source security automation for GitHub.</span>
-    <span>MIT licensed · built by Kevin Madson</span>
+    <span><a href="https://github.com/KiwiMaddog2020/picket">View on GitHub</a> · MIT · built by Kevin Madson</span>
   </div>
 </footer>
 
