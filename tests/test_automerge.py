@@ -9,7 +9,6 @@ from picket.automerge import (
     automerge_repo,
     evaluate_pr,
     file_is_sensitive,
-    has_failing_check,
     normalize_author,
     parse_pull_requests,
     trusted_authors,
@@ -25,8 +24,7 @@ def clean_pr(**overrides: object) -> PullRequest:
         "author": "octocat",
         "is_draft": False,
         "is_fork": False,
-        "failing_check": False,
-        "conflicting": False,
+        "merge_state": "CLEAN",
         "files": ("README.md", "src/app.py"),
     }
     base.update(overrides)
@@ -53,13 +51,14 @@ def test_draft_is_skipped() -> None:
     assert "draft" in evaluate_pr(clean_pr(is_draft=True), trusted=TRUSTED)["reasons"]
 
 
-def test_failing_checks_skip() -> None:
-    reasons = evaluate_pr(clean_pr(failing_check=True), trusted=TRUSTED)["reasons"]
-    assert "failing_checks" in reasons
+def test_unstable_state_skips() -> None:
+    reasons = evaluate_pr(clean_pr(merge_state="UNSTABLE"), trusted=TRUSTED)["reasons"]
+    assert "checks_not_green" in reasons
 
 
 def test_merge_conflict_skips() -> None:
-    assert "merge_conflict" in evaluate_pr(clean_pr(conflicting=True), trusted=TRUSTED)["reasons"]
+    verdict = evaluate_pr(clean_pr(merge_state="DIRTY"), trusted=TRUSTED)
+    assert "merge_conflict" in verdict["reasons"]
 
 
 def test_tier3_path_skips_even_for_trusted_author() -> None:
@@ -82,11 +81,14 @@ def test_file_is_sensitive_matches_auth_secret_payment_only() -> None:
     assert not file_is_sensitive("src/render.py")
 
 
-def test_has_failing_check_treats_pending_and_empty_as_passing() -> None:
-    assert has_failing_check([{"conclusion": "FAILURE"}])
-    assert has_failing_check([{"state": "ERROR"}])
-    assert not has_failing_check([{"conclusion": "SUCCESS"}, {"conclusion": "NEUTRAL"}])
-    assert not has_failing_check([])
+def test_non_clean_merge_states_skip_and_has_hooks_passes() -> None:
+    def verdict(state: str) -> dict:
+        return evaluate_pr(clean_pr(merge_state=state), trusted=TRUSTED)
+
+    assert "behind_base" in verdict("BEHIND")["reasons"]
+    assert "blocked" in verdict("BLOCKED")["reasons"]
+    assert "state_pending" in verdict("UNKNOWN")["reasons"]
+    assert verdict("HAS_HOOKS")["decision"] == "auto_merge"
 
 
 def test_trusted_authors_defaults_to_dependabot_and_honours_override() -> None:
@@ -107,8 +109,7 @@ def test_parse_normalizes_app_dependabot_and_matches_trusted_set() -> None:
             "author": {"login": "app/dependabot"},
             "isDraft": False,
             "headRepositoryOwner": {"login": "octocat"},
-            "mergeable": "MERGEABLE",
-            "statusCheckRollup": [],
+            "mergeStateStatus": "CLEAN",
             "files": [],
         }
     ]
@@ -124,14 +125,13 @@ def test_parse_pull_requests_detects_fork_and_files() -> None:
             "author": {"login": "octocat"},
             "isDraft": False,
             "headRepositoryOwner": {"login": "someforker"},
-            "mergeable": "MERGEABLE",
-            "statusCheckRollup": [{"conclusion": "SUCCESS"}],
+            "mergeStateStatus": "CLEAN",
             "files": [{"path": "a.py"}, {"path": "b.py"}],
         }
     ]
     (pull,) = parse_pull_requests("octocat/example", payload)
     assert pull.is_fork is True
-    assert pull.failing_check is False
+    assert pull.merge_state == "CLEAN"
     assert pull.files == ("a.py", "b.py")
 
 
@@ -161,8 +161,7 @@ def _one_clean_pr_payload() -> str:
                 "author": {"login": "octocat"},
                 "isDraft": False,
                 "headRepositoryOwner": {"login": "octocat"},
-                "mergeable": "MERGEABLE",
-                "statusCheckRollup": [{"conclusion": "SUCCESS"}],
+                "mergeStateStatus": "CLEAN",
                 "files": [{"path": "README.md"}],
             }
         ]

@@ -38,15 +38,18 @@ from picket.tiers import is_secret_finding, touches_auth_or_payment
 
 DEFAULT_TRUSTED_AUTHORS = ("dependabot[bot]",)
 
-# Check conclusions / states that mean "do not merge". Anything pending or
-# neutral is allowed through because ``--auto`` waits for the final result.
-FAILING_CHECK_STATES = {
-    "FAILURE",
-    "ERROR",
-    "CANCELLED",
-    "TIMED_OUT",
-    "ACTION_REQUIRED",
-    "STARTUP_FAILURE",
+# GitHub's computed merge state. Only these mean "mergeable now, nothing
+# failing"; any other value is a reason to wait. Using mergeStateStatus (one
+# enum) instead of statusCheckRollup avoids the deep checkSuite.workflowRun
+# expansion, which would require an Actions:Read grant the bot omits.
+MERGEABLE_STATES = {"CLEAN", "HAS_HOOKS"}
+MERGE_STATE_REASON = {
+    "DIRTY": "merge_conflict",
+    "BEHIND": "behind_base",
+    "UNSTABLE": "checks_not_green",
+    "BLOCKED": "blocked",
+    "DRAFT": "draft",
+    "UNKNOWN": "state_pending",
 }
 
 
@@ -74,14 +77,6 @@ def normalize_author(login: str) -> str:
     return login
 
 
-def has_failing_check(status_check_rollup: list[dict[str, Any]] | None) -> bool:
-    for check in status_check_rollup or []:
-        state = str(check.get("conclusion") or check.get("state") or "").upper()
-        if state in FAILING_CHECK_STATES:
-            return True
-    return False
-
-
 @dataclass(frozen=True)
 class PullRequest:
     repo: str
@@ -89,8 +84,7 @@ class PullRequest:
     author: str
     is_draft: bool
     is_fork: bool
-    failing_check: bool
-    conflicting: bool
+    merge_state: str
     files: tuple[str, ...] = ()
 
 
@@ -103,13 +97,14 @@ def evaluate_pr(pr: PullRequest, *, trusted: set[str]) -> dict[str, Any]:
         reasons.append("draft")
     if pr.is_fork:
         reasons.append("fork")
-    if pr.failing_check:
-        reasons.append("failing_checks")
-    if pr.conflicting:
-        reasons.append("merge_conflict")
+    if pr.merge_state not in MERGEABLE_STATES:
+        reasons.append(
+            MERGE_STATE_REASON.get(pr.merge_state, f"merge_state_{pr.merge_state.lower()}")
+        )
     sensitive = sorted(path for path in pr.files if file_is_sensitive(path))
     if sensitive:
         reasons.append("tier3_paths")
+    reasons = list(dict.fromkeys(reasons))
     return {
         "repo": pr.repo,
         "number": pr.number,
@@ -134,8 +129,7 @@ def parse_pull_requests(repo: str, payload: list[dict[str, Any]]) -> list[PullRe
                 author=author,
                 is_draft=bool(item.get("isDraft")),
                 is_fork=head_owner != owner,
-                failing_check=has_failing_check(item.get("statusCheckRollup")),
-                conflicting=str(item.get("mergeable", "")).upper() == "CONFLICTING",
+                merge_state=str(item.get("mergeStateStatus", "UNKNOWN")).upper(),
                 files=files,
             )
         )
@@ -155,7 +149,7 @@ def fetch_pull_requests(repo: str, *, runner: Runner) -> list[PullRequest]:
             "--limit",
             "50",
             "--json",
-            "number,author,isDraft,headRepositoryOwner,mergeable,statusCheckRollup,files",
+            "number,author,isDraft,headRepositoryOwner,mergeStateStatus,files",
         ]
     )
     if not raw.strip():
