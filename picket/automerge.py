@@ -11,8 +11,9 @@ GitHub auto-merge only when every safety condition holds:
 * no required check is failing,
 * there is no merge conflict.
 
-Auto-merge is enabled with ``gh pr merge --auto``, so GitHub still does the
-final wait-for-green before the PR actually lands. Dry-run by default, and it
+A PR is squash-merged directly once it is CLEAN (green, mergeable, required
+reviews satisfied); GitHub still enforces branch protection, and no per-repo
+"Allow auto-merge" setting is needed. Dry-run by default, and it
 honours the same live allowlist as the rest of Picket, so nothing merges until
 a repo is explicitly opted in.
 """
@@ -201,14 +202,14 @@ def automerge_repo(
             results.append(verdict)
             continue
         if not enabled:
-            verdict["action"] = (
-                "would_enable_auto_merge" if dry_run else "blocked_by_live_allowlist"
-            )
+            verdict["action"] = "would_merge" if dry_run else "blocked_by_live_allowlist"
         else:
-            runner.run(
-                ["gh", "pr", "merge", str(pr.number), "--repo", repo, "--squash", "--auto"]
-            )
-            verdict["action"] = "auto_merge_enabled"
+            # Direct squash-merge: the PR is already CLEAN (green + mergeable +
+            # any required reviews satisfied), so there is nothing for GitHub
+            # auto-merge to wait on, and a direct merge needs no per-repo "Allow
+            # auto-merge" setting. GitHub still enforces branch protection here.
+            runner.run(["gh", "pr", "merge", str(pr.number), "--repo", repo, "--squash"])
+            verdict["action"] = "merged"
         results.append(verdict)
     return results
 

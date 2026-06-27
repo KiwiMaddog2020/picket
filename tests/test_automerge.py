@@ -178,11 +178,11 @@ def test_dry_run_previews_without_merging() -> None:
         dry_run=True,
         runner=runner,
     )
-    assert results[0]["action"] == "would_enable_auto_merge"
+    assert results[0]["action"] == "would_merge"
     assert not any(command[:3] == ["gh", "pr", "merge"] for command in runner.commands)
 
 
-def test_execute_on_allowlisted_repo_enables_auto_merge() -> None:
+def test_execute_on_allowlisted_repo_merges() -> None:
     runner = CannedRunner(_one_clean_pr_payload())
     results = automerge_repo(
         "octocat/example",
@@ -192,9 +192,9 @@ def test_execute_on_allowlisted_repo_enables_auto_merge() -> None:
         dry_run=False,
         runner=runner,
     )
-    assert results[0]["action"] == "auto_merge_enabled"
+    assert results[0]["action"] == "merged"
     assert any(
-        command[:3] == ["gh", "pr", "merge"] and "--auto" in command
+        command[:4] == ["gh", "pr", "merge", "3"] and "--squash" in command
         for command in runner.commands
     )
 
