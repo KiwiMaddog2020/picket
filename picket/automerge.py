@@ -208,8 +208,14 @@ def automerge_repo(
             # any required reviews satisfied), so there is nothing for GitHub
             # auto-merge to wait on, and a direct merge needs no per-repo "Allow
             # auto-merge" setting. GitHub still enforces branch protection here.
-            runner.run(["gh", "pr", "merge", str(pr.number), "--repo", repo, "--squash"])
-            verdict["action"] = "merged"
+            # One PR that won't merge (e.g. it went BEHIND after a sibling landed)
+            # must not abort the rest of the repo's PRs or vanish from the digest.
+            try:
+                runner.run(["gh", "pr", "merge", str(pr.number), "--repo", repo, "--squash"])
+                verdict["action"] = "merged"
+            except subprocess.CalledProcessError as exc:
+                verdict["action"] = "merge_failed"
+                verdict["error"] = str(exc)
         results.append(verdict)
     return results
 

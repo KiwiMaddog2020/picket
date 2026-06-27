@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -211,3 +212,53 @@ def test_execute_without_allowlist_is_blocked() -> None:
     )
     assert results[0]["action"] == "blocked_by_live_allowlist"
     assert not any(command[:3] == ["gh", "pr", "merge"] for command in runner.commands)
+
+
+@dataclass
+class FlakyMergeRunner:
+    payload: str
+    fail_number: str
+    commands: list[list[str]] = field(default_factory=list)
+
+    def run(
+        self,
+        command: list[str],
+        *,
+        cwd: str | Path | None = None,
+        input_text: str | None = None,
+    ) -> str:
+        self.commands.append(command)
+        if command[:3] == ["gh", "pr", "list"]:
+            return self.payload
+        if command[:3] == ["gh", "pr", "merge"] and command[3] == self.fail_number:
+            raise subprocess.CalledProcessError(1, command)
+        return ""
+
+
+def test_one_merge_failure_does_not_abort_the_repo() -> None:
+    payload = json.dumps(
+        [
+            {
+                "number": n,
+                "author": {"login": "dependabot[bot]"},
+                "isDraft": False,
+                "headRepositoryOwner": {"login": "octocat"},
+                "mergeStateStatus": "CLEAN",
+                "title": f"bump {n}",
+                "files": [],
+            }
+            for n in (10, 11)
+        ]
+    )
+    runner = FlakyMergeRunner(payload, fail_number="10")
+    results = automerge_repo(
+        "octocat/example",
+        trusted=TRUSTED,
+        allowlist={"octocat/example"},
+        live=True,
+        dry_run=False,
+        runner=runner,
+    )
+    actions = {r["number"]: r["action"] for r in results}
+    assert actions[10] == "merge_failed"
+    assert actions[11] == "merged"  # the run continued past the failure
