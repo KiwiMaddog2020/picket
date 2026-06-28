@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Picket rolling deep-audit — every Sunday at 03:00, SHADOW. Template plist:
+  adapt the paths and the env file to your install before loading it.
+
+  One of four monthly sprints. Each Sunday it deep-audits this sprint's slice of
+  the DUE set (per-dimension change-gated by state/audit-ledger.json), proposes
+  fixes, and sends one digest. SHADOW by default: it merges nothing, so you can
+  review what it WOULD do before going live. RunAtLoad is off, so the first run
+  is the next Sunday 3am. To go live, change `--shadow` to `--go-live`.
+
+  Enable:   launchctl bootstrap gui/$(id -u) ~/picket/infra/com.example.picket-audit.plist
+  Disable:  launchctl bootout   gui/$(id -u)/com.example.picket-audit
+  Log:      ~/picket/state/audit-schedule.log
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.example.picket-audit</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>cd "$HOME/picket" &amp;&amp; set -a &amp;&amp; . "$HOME/.config/picket/.env" &amp;&amp; set +a &amp;&amp; bin/gh_app_token.py --exec bin/audit-sprint.sh --shadow &gt;&gt; state/audit-schedule.log 2&gt;&amp;1</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key>
+    <integer>0</integer>
+    <key>Hour</key>
+    <integer>3</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>StandardErrorPath</key>
+  <string>/tmp/picket-audit.err.log</string>
+</dict>
+</plist>
