@@ -186,6 +186,13 @@ def create_pr_for_finding(
     labels = ["picket", tier.value]
     if tier is Tier.TIER_2:
         labels.append("needs-review")
+    for label in labels:
+        # Ensure the label exists, so `gh pr create --label` never fails on a repo
+        # that has never received a picket PR. Idempotent + best-effort.
+        try:
+            runner.run(["gh", "label", "create", label, "--repo", repo, "--force"])
+        except subprocess.CalledProcessError:
+            pass
     pr_url = runner.run(
         [
             "gh",
