@@ -85,19 +85,25 @@ class Escalator:
         )
         return {"notified": True}
 
+    def escalate_summary(self, text: str, summary: str) -> dict[str, Any]:
+        """A batched loud escalation: Telegram body + ntfy + an escalate-cmd call.
+
+        Like escalate(), but for a pre-rendered digest with its own one-line
+        summary (used by the orphaned-alert pass), not a single tier-3 finding.
+        """
+        self.notify(text)
+        if self.dry_run:
+            return {"action": "would_escalate", "message": summary}
+        if self.ntfy_topic:
+            self.runner.run(["curl", "-fsS", "-d", summary, self.ntfy_topic])
+        if self.escalate_cmd:
+            self.runner.run([self.escalate_cmd, summary])
+        return {"action": "escalated", "message": summary}
+
     def escalate(self, repo: str, finding: dict[str, Any]) -> dict[str, Any]:
         message = f"Picket: review needed (tier-3) in {repo} — {finding.get('title', 'untitled')}"
-        event = {"repo": repo, "message": message, "finding": finding}
-        self.events.append(event)
-        self.notify(message)
-        if self.dry_run:
-            return {"action": "would_escalate", "message": message}
-
-        if self.ntfy_topic:
-            self.runner.run(["curl", "-fsS", "-d", message, self.ntfy_topic])
-        if self.escalate_cmd:
-            self.runner.run([self.escalate_cmd, message])
-        return {"action": "escalated", "message": message}
+        self.events.append({"repo": repo, "message": message, "finding": finding})
+        return self.escalate_summary(message, message)
 
 
 def load_allowlist(path: str | Path) -> set[str]:

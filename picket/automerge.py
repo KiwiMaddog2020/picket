@@ -86,6 +86,7 @@ class PullRequest:
     is_draft: bool
     is_fork: bool
     merge_state: str
+    title: str = ""
     files: tuple[str, ...] = ()
 
 
@@ -131,6 +132,7 @@ def parse_pull_requests(repo: str, payload: list[dict[str, Any]]) -> list[PullRe
                 is_draft=bool(item.get("isDraft")),
                 is_fork=head_owner != owner,
                 merge_state=str(item.get("mergeStateStatus", "UNKNOWN")).upper(),
+                title=str(item.get("title", "")),
                 files=files,
             )
         )
@@ -150,7 +152,7 @@ def fetch_pull_requests(repo: str, *, runner: Runner) -> list[PullRequest]:
             "--limit",
             "50",
             "--json",
-            "number,author,isDraft,headRepositoryOwner,mergeStateStatus,files",
+            "number,title,author,isDraft,headRepositoryOwner,mergeStateStatus,files",
         ]
     )
     if not raw.strip():

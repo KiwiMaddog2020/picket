@@ -54,4 +54,11 @@ echo "Picket: checking open PRs for trusted-author auto-merge"
 python3 -m picket.automerge ${am_flags[@]+"${am_flags[@]}"} \
   || echo "Picket: auto-merge pass skipped (open-PR check unavailable)"
 
+# --- Orphan-alert pass: patchable Dependabot alerts with no clean PR to
+# auto-merge (transitive deps Dependabot won't PR, conflicted PRs, or no PR).
+# Escalates the batch loudly on --execute; read-only otherwise. ---
+echo "Picket: checking for patchable alerts with no clean PR"
+python3 -m picket.orphan_alerts "$@" \
+  || echo "Picket: orphan-alert pass skipped (alert check unavailable)"
+
 echo "Picket: done (dry-run unless you passed --live --execute)."
