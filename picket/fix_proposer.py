@@ -58,6 +58,9 @@ def plan_fix(finding: dict[str, Any]) -> dict[str, Any]:
     kind = str(annotated.get("kind", "")).lower()
     source = str(annotated.get("source", "")).lower()
     secret = is_secret_finding(annotated)
+    # A config nudge whose title merely contains "secret" (e.g. "secret scanning
+    # is disabled") is NOT a leaked credential — never flag it for rotation.
+    requires_rotation = secret and not setting
     fixable = bool(annotated.get("file")) and not setting
 
     if (kind in DEPENDENCY_KINDS or source == "dependabot") and not secret:
@@ -76,7 +79,7 @@ def plan_fix(finding: dict[str, Any]) -> dict[str, Any]:
     return {
         "action": action,
         "tier": tier,
-        "requires_rotation": secret,
+        "requires_rotation": requires_rotation,
         "fixable": fixable,
         "summary": _summary(annotated, action),
         "finding": annotated,

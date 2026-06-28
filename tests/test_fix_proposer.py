@@ -44,6 +44,15 @@ def test_plan_secret_without_file_escalates_but_still_rotates() -> None:
     assert plan["requires_rotation"] is True
 
 
+def test_secret_scanning_nudge_is_not_a_rotation() -> None:
+    # a config setting whose title merely says "secret" must NOT cry rotate-a-credential
+    plan = fp.plan_fix(
+        _f(kind="config", setting="secret_scanning", title="Secret scanning is disabled")
+    )
+    assert plan["action"] == fp.ESCALATE
+    assert plan["requires_rotation"] is False
+
+
 def test_plan_code_scanning_with_file_drafts() -> None:
     plan = fp.plan_fix(_f(kind="code_scanning", file="src/x.py", title="SQL injection"))
     assert plan["action"] == fp.DRAFT_PR
