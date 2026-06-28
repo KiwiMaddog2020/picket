@@ -133,6 +133,14 @@ def run_sprint(
     ledger = load_ledger(ledger_path)
 
     repo_hashes, repo_meta, repo_entries = collect_inputs(client, repos)
+    # Seed risk.public from the freshly fetched visibility so the very first sprint
+    # (before any findings exist) still audits public, more-exposed repos first.
+    for repo, meta in repo_meta.items():
+        entry = ledger.setdefault("repos", {}).setdefault(repo, {})
+        if isinstance(entry, dict):
+            risk = entry.setdefault("risk", {})
+            if isinstance(risk, dict):
+                risk["public"] = meta.get("public", False)
     due = due_set(ledger, repo_hashes, now)
     if sprint_index is None:
         sprint_index = sprint_index_for_day(day_of_month or datetime.now().day)
