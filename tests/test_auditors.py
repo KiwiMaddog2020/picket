@@ -16,9 +16,11 @@ class FakeClient:
         *,
         alerts: dict[str, list[dict[str, Any]]] | None = None,
         api: dict[str, Any] | None = None,
+        forbidden: tuple[str, ...] = (),
     ) -> None:
         self._alerts = alerts or {}
         self._api = api or {}
+        self._forbidden = forbidden
 
     def alerts(self, repo: str, kind: str) -> list[dict[str, Any]]:
         return self._alerts.get(kind, [])
@@ -27,7 +29,10 @@ class FakeClient:
         path = args[1]
         if path in self._api:
             return self._api[path]
-        raise subprocess.CalledProcessError(1, args)
+        # un-stubbed paths fail like gh: a 403 for forbidden prefixes, else a 404.
+        forbidden = any(path.startswith(prefix) for prefix in self._forbidden)
+        stderr = "gh: HTTP 403 not accessible" if forbidden else "gh: HTTP 404 Not Found"
+        raise subprocess.CalledProcessError(1, args, stderr=stderr)
 
 
 def _dependabot_alert() -> dict[str, Any]:
@@ -93,6 +98,16 @@ def test_audit_config_flags_write_token_committed_env_and_no_protection() -> Non
     assert "branch_protection" in settings
     committed_env = [f for f in findings if f.get("secret") and f["file"] == "apps/api/.env"]
     assert len(committed_env) == 1  # the real .env, not the .env.example
+
+
+def test_audit_config_does_not_flag_protection_it_cannot_read() -> None:
+    # a 403 (no admin to read protection, e.g. the App token) must NOT read as "missing"
+    client = FakeClient(
+        api={"/repos/o/r/actions/permissions/workflow": {"default_workflow_permissions": "read"}},
+        forbidden=("/repos/o/r/branches/",),
+    )
+    findings = auditors.audit_config(REPO, client=client, entries=[("README.md", "b")])
+    assert not any(f.get("setting") == "branch_protection" for f in findings)
 
 
 def test_audit_config_quiet_when_hardened() -> None:

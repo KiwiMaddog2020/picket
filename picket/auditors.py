@@ -38,6 +38,23 @@ def _gh_safe(client: GhClient, path: str) -> Any | None:
         return None
 
 
+def _gh_get(client: GhClient, path: str) -> tuple[str, Any | None]:
+    """Like _gh_safe but distinguishes why it failed: ('ok'|'missing'|'forbidden').
+
+    'missing' is a real 404 (the thing genuinely is not there). 'forbidden' is a
+    403 (we lack the scope to read it) — so callers must NOT treat it as absence.
+    """
+    try:
+        return ("ok", client.run_json(["api", path]))
+    except subprocess.CalledProcessError as exc:
+        stderr = str(getattr(exc, "stderr", "") or "").lower()
+        if "404" in stderr or "not found" in stderr:
+            return ("missing", None)
+        return ("forbidden", None)
+    except (json.JSONDecodeError, ValueError):
+        return ("forbidden", None)
+
+
 # --- deps -----------------------------------------------------------------
 
 def audit_deps(repo: str, *, client: GhClient) -> list[dict[str, Any]]:
@@ -144,9 +161,11 @@ def audit_config(
                 }
             )
 
-    # 3. Default branch has no protection.
-    protection = _gh_safe(client, f"/repos/{repo}/branches/{default_branch}/protection")
-    if protection is None:
+    # 3. Default branch has no protection. Only flag a genuine 404; a 403 means
+    # the token lacks admin to READ protection (e.g. the App), so we cannot tell
+    # protected from unprotected and must not guess "missing".
+    status, _protection = _gh_get(client, f"/repos/{repo}/branches/{default_branch}/protection")
+    if status == "missing":
         findings.append(
             {
                 "repo": repo,
@@ -155,7 +174,7 @@ def audit_config(
                 "low_risk_config": True,
                 "setting": "branch_protection",
                 "title": f"Default branch '{default_branch}' has no branch protection",
-                "evidence": "branches/{branch}/protection returned no ruleset",
+                "evidence": "branches/{branch}/protection returned 404 (no ruleset)",
             }
         )
     return findings

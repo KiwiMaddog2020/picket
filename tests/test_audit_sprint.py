@@ -31,7 +31,8 @@ class FakeClient:
         for key in sorted(self._api, key=len, reverse=True):
             if key.endswith("/") and path.startswith(key):  # only explicit prefix keys
                 return self._api[key]
-        raise subprocess.CalledProcessError(1, args)
+        # un-stubbed path = a real 404 (e.g. no branch protection ruleset exists)
+        raise subprocess.CalledProcessError(1, args, stderr="gh: HTTP 404 Not Found")
 
 
 def _client() -> FakeClient:
